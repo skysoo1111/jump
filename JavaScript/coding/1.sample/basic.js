@@ -13,7 +13,7 @@ function getResult1(score) {
 
 // ✅ Good Code ✨
 function getResult2(score) {
-    return score > 5 ? '👍' & console.log("최고다") : '👎'; 
+    return score > 5 ? '👍' : '👎'; 
 }
 
 function printFunction(score) {
