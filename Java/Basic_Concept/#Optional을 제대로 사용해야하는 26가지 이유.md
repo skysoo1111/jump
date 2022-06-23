@@ -1,3 +1,4 @@
+# [Optional을 바르게 사용해야 하는 26가지 이유](https://dzone.com/articles/using-optional-correctly-is-not-optional)
 
 # Item 1: Optional 변수에는 null을 할당하지 마라
 
@@ -715,87 +716,249 @@ return Optional.ofNullable("PENDING"); // ofNullable doesn't add any value
 return Optional.of("PENDING"); // no risk to NPE
 ~~~
 
-# Item 20:
+# Item 20: Optional<T> 가 아닌 Non-Generic인 OptionalInt, OptionalLong, OptionalDouble 를 사용해라
+
+제네릭을 사용하더라도 박싱/언박싱으로 코드가 동작하지만 이는 성능 저하를 유발할 수 있다. 따라서 제네릭 타입을 사용해야 하는 명확한 이유가 있지 않다면 Non-generic을 사용하라.
 
 ~~~java
 ❌ BAD
-
+Optional<Integer> price = Optional.of(50);
+Optional<Long> price = Optional.of(50L);
+Optional<Double> price = Optional.of(50.43d);
 ~~~
 
 ~~~java
 ✅ GOOD
-
+OptionalInt price = OptionalInt.of(50);           // unwrap via getAsInt()
+OptionalLong price = OptionalLong.of(50L);        // unwrap via getAsLong()
+OptionalDouble price = OptionalDouble.of(50.43d); // unwrap via getAsDouble()
 ~~~
 
-# Item 21:
+# Item 21: Optional 값 비교시에는 래핑되지 않은 값이 필요하지 않다.
+
+Optional#equals가 Optional 객체가 아닌 래핑되지 않은 값을 비교하기 때문이다.
+
+~~~java
+// Optional#equals 코드
+@Override
+public boolean equals(Object obj) {
+    if (this == obj) {
+        return true;
+    }
+
+    if (!(obj instanceof Optional)) {
+        return false;
+    }
+
+    Optional<?> other = (Optional<?>) obj;
+    return Objects.equals(value, other.value);
+}
+~~~
 
 ~~~java
 ❌ BAD
+Optional<String> actualItem = Optional.of("Shoes");
+Optional<String> expectedItem = Optional.of("Shoes");        
 
+assertEquals(expectedItem.get(), actualItem.get());
 ~~~
 
 ~~~java
 ✅ GOOD
+Optional<String> actualItem = Optional.of("Shoes");
+Optional<String> expectedItem = Optional.of("Shoes");        
 
+assertEquals(expectedItem, actualItem);
 ~~~
 
-# Item 22:
+# Item 22: Optional 값을 변환할 때에는 Optional.map()과 Optional.flatMap()을 사용하자
 
 ~~~java
 ❌ BAD
+Optional<String> lowername ...; // may be empty
 
+// transform name to upper case
+Optional<String> uppername;
+if (lowername.isPresent()) {
+    uppername = Optional.of(lowername.get().toUpperCase());
+} else {
+    uppername = Optional.empty();
+}
 ~~~
 
 ~~~java
 ✅ GOOD
+Optional<String> lowername ...; // may be empty
+
+// transform name to upper case
+Optional<String> uppername = lowername.map(String::toUpperCase);
 
 ~~~
 
-# Item 23:
-
 ~~~java
 ❌ BAD
+List<Product> products = ... ;
 
+Optional<Product> product = products.stream()
+    .filter(p -> p.getPrice() < 50)
+    .findFirst();
+
+String name;
+if (product.isPresent()) {
+    name = product.get().getName().toUpperCase();
+} else {
+    name = "NOT FOUND";
+}
+
+// getName() return a non-null String
+public String getName() {
+    return name;
+}
 ~~~
 
 ~~~java
 ✅ GOOD
+List<Product> products = ... ;
 
+String name = products.stream()
+    .filter(p -> p.getPrice() < 50)
+    .findFirst()
+    .map(Product::getName)
+    .map(String::toUpperCase)
+    .orElse("NOT FOUND");
+
+// getName() return a String
+public String getName() {
+    return name;
+}
 ~~~
 
-# Item 24:
+# Item 23: filter()를 사용하여 명시적으로 래핑 값을 해제하지 말고 특정 조건에 부합되는 값을 찾자
+
+filter()를 사용하면 Optional 값을 꺼내서 조건 비교하는 것이 아니라 Optional 채로 비교 가능하다.
 
 ~~~java
 ❌ BAD
+public boolean validatePasswordLength(User userId) {
 
+    Optional<String> password = ...; // User password
+
+    if (password.isPresent()) {
+        return password.get().length() > 5;
+    }
+
+    return false;
+}
 ~~~
 
 ~~~java
 ✅ GOOD
+public boolean validatePasswordLength(User userId) {
 
+    Optional<String> password = ...; // User password
+
+    return password.filter((p) -> p.length() > 5).isPresent();
+}
 ~~~
 
-# Item 25:
+# Item 24: Stream API에서 Optional 값을 제어하고 연결해서 사용해야 하는가?
+
+그렇다면 Optional.stream을 사용하자.
 
 ~~~java
 ❌ BAD
+public List<Product> getProductList(List<String> productId) {
 
+    return productId.stream()
+        .map(this::fetchProductById)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(toList());
+}
+
+public Optional<Product> fetchProductById(String id) {
+    return Optional.ofNullable(...);
+}
 ~~~
 
 ~~~java
 ✅ GOOD
+public List<Product> getProductList(List<String> productId) {
+    return productId.stream()
+        .map(this::fetchProductById)
+        .flatMap(Optional::stream)
+        .collect(toList());
+}
 
+public Optional<Product> fetchProductById(String id) {
+    return Optional.ofNullable(...);
+}
 ~~~
 
-# Item 26:
+# Item 25: Optional을 == 비교하지 마라
 
 ~~~java
 ❌ BAD
+Product product = new Product();
+Optional<Product> op1 = Optional.of(product);
+Optional<Product> op2 = Optional.of(product);
 
+// op1 == op2 => false, expected true
+if (op1 == op2) { ...
 ~~~
 
 ~~~java
 ✅ GOOD
+Product product = new Product();
+Optional<Product> op1 = Optional.of(product);
+Optional<Product> op2 = Optional.of(product);
 
+// op1.equals(op2) => true,expected true
+if (op1.equals(op2)) { ...
+~~~
+
+~~~java
+❌❌ BAD
+Optional<Product> product = Optional.of(new Product());
+
+synchronized(product) {
+    ...
+}
+~~~
+
+# Item 26: Optional 값이 비어있는지를 java11 에서는 isEmpty()로 보다 쉽게 사용하자
+
+~~~java
+❌ BAD
+public Optional<String> fetchCartItems(long id) {
+
+    Cart cart = ... ; // this may be null
+    ...    
+    return Optional.ofNullable(cart);
+}
+
+public boolean cartIsEmpty(long id) {
+
+    Optional<String> cart = fetchCartItems(id);
+
+    return !cart.isPresent();
+}
+~~~
+
+~~~java
+✅ GOOD
+public Optional<String> fetchCartItems(long id) {
+
+    Cart cart = ... ; // this may be null
+    ...    
+    return Optional.ofNullable(cart);
+}
+
+public boolean cartIsEmpty(long id) {
+
+    Optional<String> cart = fetchCartItems(id);
+
+    return cart.isEmpty();
+}
 ~~~
 
