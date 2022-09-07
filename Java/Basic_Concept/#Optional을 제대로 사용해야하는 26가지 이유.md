@@ -1,5 +1,21 @@
 # [Optional을 바르게 사용해야 하는 26가지 이유](https://dzone.com/articles/using-optional-correctly-is-not-optional)
 
+# Item 0: of(), ofNullable()
+
+null 이 발생하는 경우 프로그램 동작에 영향을 미친다면 NPE를 발생시켜 프로그래머가 알 필요가 있다. 그런 경우 NPE를 발생시키는 of를 사용하는 것이 바람직하다.
+
+~~~java
+// collection.get("CASE")가 null 인 경우 NPE 발생
+Optional<String> of = Optional.of(collection.get("CASE"));
+
+// collection.get("CASE")가 null 인 경우 Optional.empty 반환
+Optional<String> ofNullable = Optional.ofNullable(collection.get("CASE"));
+
+// collection.get("CASE")가 null 인 경우 NPE 발생
+Optional<String> ofNullable = Optional.ofNullable(collection.get("CASE")).orElseThrow();
+
+~~~
+
 # Item 1: Optional 변수에는 null을 할당하지 마라
 
 Optional 변수는 null 대신 Optional.empty() 로 초기화 하자.
