@@ -21,3 +21,22 @@
    - Sorted Set
    - Hashes
    - List
+
+
+failover 시 에러 발생 가능성 존재 
+- 설정 정보 관련은?
+   - cluster topology 시간 설정 30s
+   - replicaset read preference 설정
+~~~java
+   private ClusterTopologyRefreshOptions getClusterClientOptions() {
+        return ClusterTopologyRefreshOptions.builder()
+                .dynamicRefreshSources(true)                                  // default: true
+                //true로 설정하면, 발견된 모든 노드로부터 topology 정보를 얻어온다. false로 설정하면, 처음 설정한 seed 노드로부터로만 topology 정보를 얻어온다.
+                .enablePeriodicRefresh(Duration.ofSeconds(30))
+                //topology 정보가 변경되었는지 감지하는 시간 텀. 노드 교체 등으로 topology 변경이 예정되어 있다면 짧게 주어도 좋을 것 같다.
+                .enableAllAdaptiveRefreshTriggers()
+                //(default: 사용하지 않음): RefreshTrigger에 enum으로 설정된 모든 refresh 이벤트에 대해 topology 갱신을 실행한다. Redis cluster에서 MOVED, ACK 같은 refresh trigger 이벤트가 많이 발생하는 경우 계속 topology를 갱신하려고 해서 성능 이슈가 발생할 수가 있다.
+                .adaptiveRefreshTriggersTimeout(Duration.ofSeconds(30))       // default: 30초
+                //adaptive refresh 주기
+                .build();
+~~~
