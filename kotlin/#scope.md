@@ -61,7 +61,7 @@ people.first()
         name = "현구막" 
     }
 
-//<!-- it나 다른이름 참조가 가능하기 때문에 대상 식벽에 용이함 -->
+//<!-- it나 다른이름 참조가 가능하기 때문에 대상 식별에 용이함 -->
 people.first()
     .also { firstPerson ->
         println("이메일 길이: ${firstPerson.email.length}")
