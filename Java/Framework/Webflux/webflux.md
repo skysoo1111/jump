@@ -3,7 +3,7 @@
 ## webflux 설정 
 ~~~java
 return webClientBuild()
-                .baseUrl(tvingAuthProperty.getHost())
+                .baseUrl(authProperty.getHost())
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .clientConnector(new ReactorClientHttpConnector(reactorResourceFactory, httpClient ->
                         HttpClient.create(connectionProvider)
